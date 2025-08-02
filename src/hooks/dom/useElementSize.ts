@@ -1,4 +1,5 @@
-import { useState, useLayoutEffect, type RefObject } from 'react'
+import { useState, type RefObject } from 'react'
+import { useIsomorphicLayoutEffect } from './useIsomorphicLayoutEffect.ts'
 
 interface Size {
 	width: number
@@ -10,22 +11,16 @@ export function useElementSize<T extends HTMLElement = HTMLElement>(
 ): Size {
 	const [size, setSize] = useState<Size>({ width: 0, height: 0 })
 
-	useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		if (!ref.current) return
 
 		const element = ref.current
 
-		function updateSize() {
-			setSize({
-				width: element.offsetWidth,
-				height: element.offsetHeight
-			})
-		}
-
-		updateSize()
-
-		const resizeObserver = new ResizeObserver(() => {
-			updateSize()
+		const resizeObserver = new ResizeObserver(([entry]) => {
+			if (entry && entry.contentRect) {
+				const { width, height } = entry.contentRect
+				setSize({ width, height })
+			}
 		})
 
 		resizeObserver.observe(element)
